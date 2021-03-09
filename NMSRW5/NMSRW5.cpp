@@ -160,7 +160,8 @@ void count_nmrse(string graph_name, vector<vector<long double>> &res, string out
 
 int main(int argc, char *argv[])
 {
-    igraph_rng_seed(igraph_rng_default(), random_device{}());
+    random_device rd;
+
     double dur = 0;
     struct timeval start, end, realstart, realend;
     if (argc < 5)
@@ -229,34 +230,24 @@ int main(int argc, char *argv[])
     igraph_small(&graph[20], 5, IGRAPH_UNDIRECTED, 0, 1, 0, 2, 0, 3, 0, 4, 1, 2, 1, 3, 1, 4, 2, 3, 2, 4, 3, 4, -1);
     //for(int i=0;i<MAXSUBNAME;++i)
     //    igraph_write_graph_edgelist(&graph[i],stdout);
-    int W_constant[] = {48, 28, 104, 88, 72, 220, 264, 528, 16, 60, 224, 80, 224, 488, 176, 396, 944, 504, 992, 1728, 2880};
-
-    int a[6][21];
-    for (int i = 0; i < 6; i++)
-        for (int j = 0; j < 21; j++)
-        {
-            igraph_bool_t iso;
-            igraph_subisomorphic(&graph[j], &graph4[i], &iso);
-            if (iso)
-                a[i][j] = 1;
-            else
-                a[i][j] = 0;
-        }
+        int W_constant[] = {48, 28, 104, 88, 72, 220, 264, 528, 16, 60, 224, 80, 224, 488, 176, 396, 944, 504, 992, 1728, 2880};
+    //int W_constant[]={24,8,40,20,18,68,60,156,2,12,64,10,46,124,40,108,244,108,232,432,720};
 
     unordered_map<string, int> series_map_7;
     unordered_map<string, int> series_map_10;
 
     for (int iii = 0; iii < repeat_time; ++iii)
     {
+        igraph_rng_seed(igraph_rng_default(), rd());
         int startid = RandStart(&G);
-        //        cout << startid <<endl;
+//        cout<<"Turn "<<iii<<" start from "<<startid<<endl;
         long double count[MOTIF5_NUM]; //count times all subgraph may appear
         int run_times = 0;
 
         for (int i = 0; i < MOTIF5_NUM; ++i)
             count[i] = 0;
         gettimeofday(&start, NULL);
-        vector<int> node(5), user(5), degree(4);
+        vector<long> node(5), user(5), degree(4);
         igraph_vector_t* nodeneigh[4];
         int walk = 0;
         long count_times = 0;
@@ -265,15 +256,12 @@ int main(int argc, char *argv[])
         igraph_lazy_adjlist_t adj;
         IGRAPH_CHECK(igraph_lazy_adjlist_init(&G, &adj, IGRAPH_ALL,IGRAPH_DONT_SIMPLIFY));
         IGRAPH_FINALLY(igraph_lazy_adjlist_destroy, &adj);
-        /*         while(1){
-            sample_times++; */
         for (; run_times < given_time; ++run_times)
         {
-            //            cout << " count subgraph time  : " << run_times <<endl;
             node[0] = startid;
             nodeneigh[0] = igraph_lazy_adjlist_get(&adj, node[0]);
             degree[0] = igraph_vector_size(nodeneigh[0]);
-            //           print_vector(&nodeneigh[0], stdout);
+
             user[1] = get_random(degree[0]);
             node[1] = VECTOR(*nodeneigh[0])[user[1]];
 
@@ -306,19 +294,11 @@ int main(int argc, char *argv[])
                 node[4] = VECTOR(*nodeneigh[2])[user[4] - degree[0] - degree[1]];
             else
                 node[4] = VECTOR(*nodeneigh[3])[user[4] - degree[0] - degree[1] - degree[2]];
-
-            //            for(int k=0;k<5;k++)
-            //                print_vector(&nodeneigh[k],stdout);
-            //            for (int j=0;j<6;j++){
-            //                cout << node[j] <<endl;
-            //            }
-
-            //            cout << "subgraphsize: " <<subgraph_size<<endl;
-            int dg_prod = (degree[3] + degree[0] + degree[1] + degree[2]) * (degree[0] + degree[1]) * (degree[0] + degree[1] + degree[2]);
+            long double dg_prod = (long double)(degree[3] + degree[0] + degree[1] + degree[2]) * (degree[0] + degree[1]) * (degree[0] + degree[1] + degree[2]);
             set<int> it(node.begin(), node.end());
             if (it.size() == 5)
             {
-                igraph_t subgraph, subgraph4;
+                igraph_t subgraph;
                 igraph_vector_t vc;
                 igraph_vector_init(&vc, 0);
                 for (int i = 0; i < 4; ++i)
@@ -335,17 +315,6 @@ int main(int argc, char *argv[])
                 igraph_create(&subgraph, &vc, 0, IGRAPH_UNDIRECTED);
                 int gid = get_graphletid(subgraph);
                 count[gid] = count[gid] + dg_prod;
-                /*if(gid==0){
-                                igraph_vector_t subgraph_degree;
-                                igraph_vector_init(&subgraph_degree,5);
-                                igraph_degree(&subgraph, &subgraph_degree, igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
-                                int node_deg_4=0;
-                                for(;node_deg_4<5;node_deg_4++){
-                                    if(VECTOR(subgraph_degree)[node_deg_4]==4) break;
-                                }
-                                graphlet0_deg4_node.push_back(degree[node_deg_4]);
-                            }
-                            */
                 igraph_destroy(&subgraph);
             }
             startid = RandWalk(&G, jump_len, node[0]);
@@ -380,9 +349,9 @@ int main(int argc, char *argv[])
     string nmrse_file_name = graph_name + "_" + to_string(given_time) + "_" + to_string(jump_len) + "_" + to_string(repeat_time) + ".nrmse";
     count_nmrse(graph_name, res, nmrse_file_name);
 
-    ofstream graphlet0_deg4_file("graphlet0_deg4_node.txt");
-    //for(auto i:graphlet0_deg4_node) graphlet0_deg4_file<<i<<"\n";
-    graphlet0_deg4_file.close();
+/*     ofstream graphlet0_deg4_file("graphlet0_deg4_node.txt");
+    for(auto i:graphlet0_deg4_node) graphlet0_deg4_file<<i<<"\n";
+    graphlet0_deg4_file.close(); */
     return 0;
 }
 

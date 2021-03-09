@@ -13,10 +13,9 @@
 //Set for once random walk jump distance
 using namespace std;
 sfmt_t sfmtSeed;
-default_random_engine rng;
 
-int get_random(int range){
-     return sfmt_genrand_uint32(&sfmtSeed) % range;
+int getRandUniform(int range){
+     return RNG_INTEGER(0,range-1);
 //    uniform_int_distribution<> dist(0,range-1);
 //    return dist(rng);
 }
@@ -77,7 +76,7 @@ int get_graphletid(igraph_t &graph);
 int RandStart(igraph_t *graph)
 {
     long long v_size = igraph_vcount(graph);
-    long long tmp = get_random(v_size);
+    long long tmp = getRandUniform(v_size);
     return RandWalk(graph, 10000, tmp);
 }
 /**
@@ -97,7 +96,7 @@ int RandWalk(igraph_t *graph, int steps, int startNode)
     {
         igraph_neighbors(graph, &v, nextNode, IGRAPH_ALL);
         //        print_vector(&v, stdout);
-        int pos = get_random(igraph_vector_size(&v));
+        int pos = getRandUniform(igraph_vector_size(&v));
         //        printf("step: %d size : %ld choose :%ld \t",i,igraph_vector_size(&v),next);
         nextNode = VECTOR(v)[pos];
         //        cout <<nextNode <<"randwalk" <<endl;
@@ -161,6 +160,7 @@ void count_nmrse(string graph_name, vector<vector<long double>> &res, string out
 
 int main(int argc, char *argv[])
 {
+    random_device rd;
 
     double dur = 0;
     struct timeval start, end, realstart, realend;
@@ -198,14 +198,14 @@ int main(int argc, char *argv[])
     dur = 0;
 
     sfmt_init_gen_rand(&sfmtSeed, time(NULL));
-    igraph_t graph[MOTIF5_NUM], graph4[6];
+    igraph_t graph[MOTIF5_NUM];
 
-    igraph_small(&graph4[0], 4, IGRAPH_UNDIRECTED, 0, 3, 1, 3, 2, 3, -1);
-    igraph_small(&graph4[1], 4, IGRAPH_UNDIRECTED, 0, 3, 0, 2, 1, 3, -1);
-    igraph_small(&graph4[2], 4, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 1, 3, 2, 3, -1);
-    igraph_small(&graph4[3], 4, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 1, 2, 1, 3, -1);
-    igraph_small(&graph4[4], 4, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3, -1);
-    igraph_small(&graph4[5], 4, IGRAPH_UNDIRECTED, 0, 1, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3, -1);
+    // igraph_small(&graph4[0], 4, IGRAPH_UNDIRECTED, 0, 3, 1, 3, 2, 3, -1);
+    // igraph_small(&graph4[1], 4, IGRAPH_UNDIRECTED, 0, 3, 0, 2, 1, 3, -1);
+    // igraph_small(&graph4[2], 4, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 1, 3, 2, 3, -1);
+    // igraph_small(&graph4[3], 4, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 1, 2, 1, 3, -1);
+    // igraph_small(&graph4[4], 4, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3, -1);
+    // igraph_small(&graph4[5], 4, IGRAPH_UNDIRECTED, 0, 1, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3, -1);
 
     igraph_small(&graph[0], 5, IGRAPH_UNDIRECTED, 0, 4, 1, 4, 2, 4, 3, 4, -1);
     igraph_small(&graph[1], 5, IGRAPH_UNDIRECTED, 0, 3, 0, 4, 1, 4, 2, 4, -1);
@@ -228,84 +228,82 @@ int main(int argc, char *argv[])
     igraph_small(&graph[18], 5, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 0, 4, 1, 2, 1, 3, 1, 4, 2, 4, 3, 4, -1);
     igraph_small(&graph[19], 5, IGRAPH_UNDIRECTED, 0, 2, 0, 3, 0, 4, 1, 2, 1, 3, 1, 4, 2, 3, 2, 4, 3, 4, -1);
     igraph_small(&graph[20], 5, IGRAPH_UNDIRECTED, 0, 1, 0, 2, 0, 3, 0, 4, 1, 2, 1, 3, 1, 4, 2, 3, 2, 4, 3, 4, -1);
-    //for(int i=0;i<MAXSUBNAME;++i)
-    //    igraph_write_graph_edgelist(&graph[i],stdout);
-    int W_constant[] = {48, 28, 104, 88, 72, 220, 264, 528, 16, 60, 224, 80, 224, 488, 176, 396, 944, 504, 992, 1728, 2880};
-    //int W_constant[]={24,8,40,20,18,68,60,156,2,12,64,10,46,124,40,108,244,108,232,432,720};
-    
-    unordered_map<string, int> series_map_7;
-    unordered_map<string, int> series_map_10;
+
+
+    //    int W_constant[] = {48, 28, 104, 88, 72, 220, 264, 528, 16, 60, 224, 80, 224, 488, 176, 396, 944, 504, 992, 1728, 2880};
+    int W_constant[]={24,8,40,20,18,68,60,156,2,12,64,10,46,124,40,108,244,108,232,432,720};
+
+    // int a[6][21];
+    // for (int i = 0; i < 6; i++)
+    //     for (int j = 0; j < 21; j++)
+    //     {
+    //         igraph_bool_t iso;
+    //         igraph_subisomorphic(&graph[j], &graph4[i], &iso);
+    //         if (iso)
+    //             a[i][j] = 1;
+    //         else
+    //             a[i][j] = 0;
+    //     }
+
+    // unordered_map<string, int> series_map_7;
+    // unordered_map<string, int> series_map_10;
 
     for (int iii = 0; iii < repeat_time; ++iii)
     {
-        rng.seed(random_device{}());
+        igraph_rng_seed(igraph_rng_default(), rd());
         int startid = RandStart(&G);
-        //        cout << startid <<endl;
+//        cout<<"Turn "<<iii<<" start from "<<startid<<endl;
         long double count[MOTIF5_NUM]; //count times all subgraph may appear
         int run_times = 0;
 
         for (int i = 0; i < MOTIF5_NUM; ++i)
             count[i] = 0;
         gettimeofday(&start, NULL);
-        vector<int> node(5), user(5), degree(4);
-        igraph_vector_t nodeneigh[4];
-        for (int j = 0; j < 4; j++)
-            igraph_vector_init(&nodeneigh[j], 0);
+        vector<long> node(5), user(5), degree(4);
+        igraph_vector_t* nodeneigh[4];
         int walk = 0;
         long count_times = 0;
         int flag = 0;
         long sample_times = 0;
+        igraph_lazy_adjlist_t adj;
+        IGRAPH_CHECK(igraph_lazy_adjlist_init(&G, &adj, IGRAPH_ALL,IGRAPH_DONT_SIMPLIFY));
+        IGRAPH_FINALLY(igraph_lazy_adjlist_destroy, &adj);
         /*         while(1){
             sample_times++; */
         for (; run_times < given_time; ++run_times)
         {
             //            cout << " count subgraph time  : " << run_times <<endl;
             node[0] = startid;
-
-            igraph_neighbors(&G, &nodeneigh[0], node[0], IGRAPH_ALL);
-            degree[0] = igraph_vector_size(&nodeneigh[0]);
+            nodeneigh[0] = igraph_lazy_adjlist_get(&adj, node[0]);
+            degree[0] = igraph_vector_size(nodeneigh[0]);
             //           print_vector(&nodeneigh[0], stdout);
-            user[1] = get_random(degree[0]);
-            node[1] = VECTOR(nodeneigh[0])[user[1]];
+            user[1] = getRandUniform(degree[0]);
+            node[1] = VECTOR(*nodeneigh[0])[user[1]];
 
-            igraph_neighbors(&G, &nodeneigh[1], node[1], IGRAPH_ALL);
-            degree[1] = igraph_vector_size(&nodeneigh[1]);
-            user[2] = get_random(degree[0] + degree[1]);
-            if (user[2] < degree[0])
-                node[2] = VECTOR(nodeneigh[0])[user[2]];
+            nodeneigh[1] = igraph_lazy_adjlist_get(&adj, node[1]);
+            degree[1] = igraph_vector_size(nodeneigh[1]);
+            user[2] = getRandUniform(degree[1]);
+            node[2] = VECTOR(*nodeneigh[1])[user[2]];
+
+            nodeneigh[2] = igraph_lazy_adjlist_get(&adj, node[2]);
+            degree[2] = igraph_vector_size(nodeneigh[2]);
+            user[3] = getRandUniform(degree[1] + degree[2]);
+            if (user[3] < degree[1])
+                node[3] = VECTOR(*nodeneigh[1])[user[3]]; 
             else
-                node[2] = VECTOR(nodeneigh[1])[user[2] - degree[0]];
+                node[3] = VECTOR(*nodeneigh[2])[user[3] - degree[1]];
 
-            igraph_neighbors(&G, &nodeneigh[2], node[2], IGRAPH_ALL);
-            degree[2] = igraph_vector_size(&nodeneigh[2]);
-            user[3] = get_random(degree[0] + degree[1] + degree[2]);
-            if (user[3] < degree[0])
-                node[3] = VECTOR(nodeneigh[0])[user[3]];
-            else if (user[3] < degree[0] + degree[1])
-                node[3] = VECTOR(nodeneigh[1])[user[3] - degree[0]];
+            nodeneigh[3] = igraph_lazy_adjlist_get(&adj, node[3]);
+            degree[3] = igraph_vector_size(nodeneigh[3]);
+            user[4] = getRandUniform(degree[1] + degree[2]  + degree[3]);
+            if (user[4] < degree[1])
+                node[4] = VECTOR(*nodeneigh[1])[user[4]];
+            else if (user[4] < degree[1] + degree[2])
+                node[4] = VECTOR(*nodeneigh[2])[user[4] - degree[1]];
             else
-                node[3] = VECTOR(nodeneigh[2])[user[3] - degree[0] - degree[1]];
+                node[4] = VECTOR(*nodeneigh[3])[user[4] - degree[2] - degree[1]];
 
-            igraph_neighbors(&G, &nodeneigh[3], node[3], IGRAPH_ALL);
-            degree[3] = igraph_vector_size(&nodeneigh[3]);
-            user[4] = get_random(degree[1] + degree[2] + degree[0] + degree[3]);
-            if (user[4] < degree[0])
-                node[4] = VECTOR(nodeneigh[0])[user[4]];
-            else if (user[4] < degree[1] + degree[0])
-                node[4] = VECTOR(nodeneigh[1])[user[4] - degree[0]];
-            else if (user[4] < degree[1] + degree[0] + degree[2])
-                node[4] = VECTOR(nodeneigh[2])[user[4] - degree[0] - degree[1]];
-            else
-                node[4] = VECTOR(nodeneigh[3])[user[4] - degree[0] - degree[1] - degree[2]];
-
-            //            for(int k=0;k<5;k++)
-            //                print_vector(&nodeneigh[k],stdout);
-            //            for (int j=0;j<6;j++){
-            //                cout << node[j] <<endl;
-            //            }
-
-            //            cout << "subgraphsize: " <<subgraph_size<<endl;
-            int dg_prod = (degree[3] + degree[0] + degree[1] + degree[2]) * (degree[0] + degree[1]) * (degree[0] + degree[1] + degree[2]);
+            long double dg_prod = (long double)(degree[3] + degree[1] + degree[2]) * degree[1] * (degree[1] + degree[2]);
             set<int> it(node.begin(), node.end());
             if (it.size() == 5)
             {
@@ -314,16 +312,12 @@ int main(int argc, char *argv[])
                 igraph_vector_init(&vc, 0);
                 for (int i = 0; i < 4; ++i)
                 {
-                    //                cout << nodes [i] <<" ";
-                    //                cout << igraph_vector_size(&neighs[i]) << " : ";
-                    //               print_vector(&neighs[i],stdout);
                     for (int j = i + 1; j < 5; ++j)
                     {
-                        if (igraph_vector_binsearch2(&nodeneigh[i], node[j]))
+                        if (igraph_vector_binsearch2(nodeneigh[i], node[j]))
                         {
                             igraph_vector_push_back(&vc, i);
                             igraph_vector_push_back(&vc, j);
-                            //                    cout <<"find !!"<<nodes[i] <<' '<<nodes[j]<<endl;
                         }
                     }
                 }
@@ -343,20 +337,19 @@ int main(int argc, char *argv[])
                             */
                 igraph_destroy(&subgraph);
             }
-            //            if(flag==1) break;
             startid = RandWalk(&G, jump_len, node[0]);
-            //            printf("next startnode: %ld",startid);
         }
+
+        igraph_lazy_adjlist_destroy(&adj);
+            IGRAPH_FINALLY_CLEAN(1);
         gettimeofday(&end, NULL);
         dur = dur + (end.tv_sec - start.tv_sec) + (double)(end.tv_usec - start.tv_usec) / 1000000.0;
-        //        printf("%d Use Time:%f\n",iii,dur);  //count time
 
-        //      sort occurrence probability of all subgraph and print most frequent subgraph serial number
         vector<long double> ans(MOTIF5_NUM);
         for (int i = 0; i < MOTIF5_NUM; ++i)
             ans[i] = ((count[i] / W_constant[i]) / given_time) * igraph_ecount(&G) * 2;
 
-        ofstream out(s + ".nmsrw5", std::ios_base::app);
+        ofstream out(s + ".ssrw5", std::ios_base::app);
         out.precision(15);
         for (int i = 0; i < MOTIF5_NUM; ++i)
         {
@@ -367,8 +360,9 @@ int main(int argc, char *argv[])
         out.close();
         //            cout<<sample_times<<endl;
     }
+
     printf("per sample Use Time:%f\n", dur / repeat_time); //count time
-    cout << "SSRW and NMSRE is writing to " << s << ".nmsrw5 and " << s << ".nmrse" << endl;
+    cout << "SSRW and NMSRE is writing to " << s << ".ssrw5 and " << s << ".nmrse" << endl;
     gettimeofday(&realend, NULL);
     dur = (realend.tv_sec - realstart.tv_sec) + (double)(realend.tv_usec - realstart.tv_usec) / 1000000.0;
     printf("All Time:%f\n", dur); //count time
@@ -528,3 +522,4 @@ int get_graphletid(igraph_t &graph)
     }
     return id;
 }
+
